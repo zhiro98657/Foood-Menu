@@ -1,0 +1,874 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Responsive Online Menu with Floating List Button</title>
+    <style>
+      /* Global Styles */
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+          Arial, sans-serif;
+      }
+
+      body {
+        background-color: #f4f6f8;
+        color: #333;
+        padding: 20px;
+      }
+
+      .menu-container {
+        max-width: 1600px;
+        margin: 0 auto;
+        padding-bottom: 80px; /* Space so the floating button doesn't block content */
+      }
+
+      /* Category Filter Navigation */
+      .category-nav {
+        display: flex;
+        gap: 12px;
+        overflow-x: auto;
+        padding-bottom: 15px;
+        margin-bottom: 25px;
+        scrollbar-width: none;
+      }
+
+      .category-nav::-webkit-scrollbar {
+        display: none;
+      }
+
+      .category-btn {
+        background-color: #ffffff;
+        border: 1px solid #e2e8f0;
+        padding: 10px 24px;
+        border-radius: 25px;
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: #4a5568;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+      }
+
+      .category-btn.active,
+      .category-btn:hover {
+        background-color: #5551ff;
+        color: white;
+        border-color: #5551ff;
+      }
+
+      /* Responsive Menu Grid */
+      .menu-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr); /* 2 columns on mobile */
+        gap: 20px;
+      }
+
+      @media (min-width: 650px) {
+        .menu-grid {
+          grid-template-columns: repeat(3, 1fr);
+        }
+      }
+
+      @media (min-width: 950px) {
+        .menu-grid {
+          grid-template-columns: repeat(4, 1fr);
+        }
+      }
+
+      @media (min-width: 1400px) {
+        .menu-grid {
+          grid-template-columns: repeat(6, 1fr);
+        }
+      }
+
+      /* Menu Item Card */
+      .menu-card {
+        background-color: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+        display: flex;
+        flex-direction: column;
+        transition:
+          transform 0.2s,
+          box-shadow 0.2s;
+      }
+
+      .menu-card.hidden {
+        display: none;
+      }
+
+      .menu-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+      }
+
+      .image-container {
+        width: 100%;
+        aspect-ratio: 4 / 3;
+        background-color: #f8fafc;
+        overflow: hidden;
+      }
+
+      .image-container img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .card-details {
+        padding: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        flex-grow: 1;
+      }
+
+      .item-name {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #1a202c;
+        line-height: 1.3;
+      }
+
+      .price-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: auto;
+      }
+
+      .item-price {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #5551ff;
+      }
+
+      .add-btn {
+        background-color: #5551ff;
+        color: white;
+        border: none;
+        padding: 8px 11px;
+        border-radius: 8px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+
+      .add-btn:hover {
+        background-color: #3b36ff;
+      }
+
+      /* --- FLOATING LIST BUTTON --- */
+      .floating-list-btn {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background-color: #5551ff;
+        color: white;
+        border: none;
+        padding: 16px;
+        font-size: 1.05rem;
+        font-weight: 700;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.1);
+        z-index: 999;
+        transition:
+          transform 0.2s,
+          background-color 0.2s;
+      }
+
+      @media (min-width: 650px) {
+        .floating-list-btn {
+          bottom: 25px;
+          right: 25px;
+          left: auto;
+          width: auto;
+          padding: 14px 28px;
+          border-radius: 50px;
+          font-size: 1rem;
+          justify-content: flex-start;
+          box-shadow: 0 10px 25px rgba(85, 81, 255, 0.4);
+        }
+        .floating-list-btn:hover {
+          background-color: #3b36ff;
+          transform: scale(1.03);
+        }
+      }
+
+      .floating-badge {
+        background-color: white;
+        color: #5551ff;
+        font-size: 0.85rem;
+        font-weight: 800;
+        padding: 3px 10px;
+        border-radius: 20px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      }
+
+      /* --- SUMMARY MODAL POPUP LAYOUT --- */
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(4px);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s ease;
+      }
+
+      .modal-overlay.active {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .modal-window {
+        background-color: white;
+        width: 90%;
+        max-width: 650px;
+        border-radius: 20px;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        max-height: 80vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      @keyframes slideUp {
+        from {
+          transform: translateY(30px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      .modal-header {
+        padding: 20px 24px;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .modal-header h2 {
+        font-size: 1.4rem;
+        font-weight: 800;
+      }
+
+      .close-modal-btn {
+        background: none;
+        border: none;
+        font-size: 1.8rem;
+        color: #a0aec0;
+        cursor: pointer;
+        line-height: 1;
+      }
+
+      .modal-body {
+        padding: 24px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .empty-message {
+        color: #a0aec0;
+        text-align: center;
+        padding: 30px 0;
+        font-style: italic;
+        font-size: 1rem;
+      }
+
+      /* Modal Summary Item Layout */
+      .summary-row-item {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid #edf2f7;
+      }
+
+      .summary-item-img {
+        width: 85px;
+        height: 65px;
+        object-fit: cover;
+        border-radius: 10px;
+        background-color: #f7fafc;
+      }
+
+      .summary-item-details {
+        flex-grow: 1;
+      }
+
+      .summary-item-title {
+        font-weight: 700;
+        font-size: 1.2rem;
+        color: #1a202c;
+      }
+
+      .summary-item-subtext {
+        font-size: 1.1rem;
+        color: #323333;
+        margin-top: 4px;
+        font-weight: 500;
+      }
+
+      .remove-btn {
+        background: none;
+        border: none;
+        color: #e53e3e;
+        font-size: 1rem;
+        cursor: pointer;
+        font-weight: 700;
+        padding: 5px;
+      }
+
+      .summary-item-total-price {
+        font-weight: 800;
+        font-size: 1.1rem;
+        color: #5551ff;
+        min-width: 70px;
+        text-align: right;
+      }
+
+      .modal-footer {
+        padding: 20px 24px;
+        border-top: 1px solid #e2e8f0;
+        background-color: #f8fafc;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .modal-total-label {
+        font-size: 1.2rem;
+        font-weight: 800;
+      }
+
+      #modal-grand-total {
+        color: #5551ff;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      style="
+        display: flex;
+        background-color: #5551ff;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 40px;
+        padding: 10px 15px;
+        border-radius: 50px;
+      "
+    >
+      <h2 style="font-size: 1.8rem; letter-spacing: -1px; color: #f7fafc">
+        🍴 Our Menu
+      </h2>
+    </div>
+    <div class="menu-container">
+      <div class="category-nav">
+        <button class="category-btn active" data-filter="all">All</button>
+        <button class="category-btn" data-filter="pizza">PIZZA</button>
+        <button class="category-btn" data-filter="burgers">BURGER</button>
+        <button class="category-btn" data-filter="salads">SALAD</button>
+        <button class="category-btn" data-filter="drinks">DRINK</button>
+        <button class="category-btn" data-filter="pasta">PASTA</button>
+      </div>
+
+      <div class="menu-grid">
+        <div class="menu-card" data-category="drinks">
+          <div class="image-container">
+            <img src="Coca-Cola.png" alt="Coca-Cola" />
+          </div>
+          <div class="card-details">
+            <h3 class="item-name">Coca-Cola</h3>
+            <div class="price-row">
+              <span class="item-price" data-raw-price="5.00">$5.00</span>
+              <button class="add-btn">Add to List</button>
+            </div>
+          </div>
+        </div>
+        <div class="menu-card" data-category="drinks">
+          <div class="image-container">
+            <img src="Lemonade.png" alt="Lemonade" />
+          </div>
+          <div class="card-details">
+            <h3 class="item-name">Lemonade</h3>
+            <div class="price-row">
+              <span class="item-price" data-raw-price="7.00">$7.00</span>
+              <button class="add-btn">Add to List</button>
+            </div>
+          </div>
+        </div>
+        <div class="menu-card" data-category="drinks">
+          <div class="image-container">
+            <img src="Mineral Water.png" alt="Mineral Water" />
+          </div>
+          <div class="card-details">
+            <h3 class="item-name">Mineral Water</h3>
+            <div class="price-row">
+              <span class="item-price" data-raw-price="5.00">$5.00</span>
+              <button class="add-btn">Add to List</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="menu-card" data-category="drinks">
+          <div class="image-container">
+            <img src="Orange Juice.png" alt="Orange Juice" />
+          </div>
+          <div class="card-details">
+            <h3 class="item-name">Orange Juice</h3>
+            <div class="price-row">
+              <span class="item-price" data-raw-price="8.00">$8.00</span>
+              <button class="add-btn">Add to List</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="menu-card" data-category="drinks">
+          <div class="image-container">
+            <img src="Pepsi.png" alt="Pepsi" />
+          </div>
+          <div class="card-details">
+            <h3 class="item-name">Pepsi</h3>
+            <div class="price-row">
+              <span class="item-price" data-raw-price="4.00">$4.00</span>
+              <button class="add-btn">Add to List</button>
+            </div>
+          </div>
+        </div>
+        <div class="menu-card" data-category="salads">
+          <div class="image-container">
+            <img src="Caesar Salad.png" alt="Caesar Salad" />
+          </div>
+          <div class="card-details">
+            <h3 class="item-name">Caesar Salad</h3>
+            <div class="price-row">
+              <span class="item-price" data-raw-price="15.00">$15.00</span>
+              <button class="add-btn">Add to List</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="menu-card" data-category="salads">
+          <div class="image-container">
+            <img src="Chicken Salad.png" alt="Chicken Salad" />
+          </div>
+          <div class="card-details">
+            <h3 class="item-name">Chicken Salad</h3>
+            <div class="price-row">
+              <span class="item-price" data-raw-price="20.00">$20.00</span>
+              <button class="add-btn">Add to List</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="menu-card" data-category="salads">
+          <div class="image-container">
+            <img src="Garden Salad.png" alt="Garden Salad" />
+          </div>
+          <div class="card-details">
+            <h3 class="item-name">Garden Salad</h3>
+            <div class="price-row">
+              <span class="item-price" data-raw-price="10.00">$10.00</span>
+              <button class="add-btn">Add to List</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="menu-card" data-category="salads">
+          <div class="image-container">
+            <img src="Greek Salad.png" alt="Greek Salad" />
+          </div>
+          <div class="card-details">
+            <h3 class="item-name">Greek Salad</h3>
+            <div class="price-row">
+              <span class="item-price" data-raw-price="12.00">$12.00</span>
+              <button class="add-btn">Add to List</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="menu-card" data-category="salads">
+          <div class="image-container">
+            <img src="Tuna Salad.png" alt="Tuna Salad" />
+          </div>
+          <div class="card-details">
+            <h3 class="item-name">Tuna Salad</h3>
+            <div class="price-row">
+              <span class="item-price" data-raw-price="35.00">$35.00</span>
+              <button class="add-btn">Add to List</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="menu-card" data-category="burgers">
+          <div class="image-container">
+            <img src="Cheeseburger.png" alt="Cheeseburger.png" />
+          </div>
+          <div class="card-details">
+            <h3 class="item-name">Cheese burger</h3>
+            <div class="price-row">
+              <span class="item-price" data-raw-price="7.50">$7.50</span>
+              <button class="add-btn">Add to List</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="menu-card" data-category="burgers">
+          <div class="image-container">
+            <img src="Chicken Burger.png" alt="Chickenburger" />
+          </div>
+          <div class="card-details">
+            <h3 class="item-name">Chicken burger</h3>
+            <div class="price-row">
+              <span class="item-price" data-raw-price="12.00">$12.00</span>
+              <button class="add-btn">Add to List</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="menu-card" data-category="burgers">
+          <div class="image-container">
+            <img src="Classic Beef Burger.png" alt="Classic Beef Burger" />
+          </div>
+          <div class="card-details">
+            <h3 class="item-name">Classic Beef Burger</h3>
+            <div class="price-row">
+              <span class="item-price" data-raw-price="10.00">$10.00</span>
+              <button class="add-btn">Add to List</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="menu-card" data-category="burgers">
+          <div class="image-container">
+            <img src="Double Beef Burger.png" alt="Double Beef Burger" />
+          </div>
+          <div class="card-details">
+            <h3 class="item-name">Double Beef Burger</h3>
+            <div class="price-row">
+              <span class="item-price" data-raw-price="18.00">$18.00</span>
+              <button class="add-btn">Add to List</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="menu-card" data-category="burgers">
+          <div class="image-container">
+            <img src="Veggie Burger.png" alt="Veggie Burger" />
+          </div>
+          <div class="card-details">
+            <h3 class="item-name">Veggie Burger</h3>
+            <div class="price-row">
+              <span class="item-price" data-raw-price="20.00">$20.00</span>
+              <button class="add-btn">Add to List</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="menu-card" data-category="pizza">
+          <div class="image-container">
+            <img src="BBQ Chicken Pizza.png" alt="BBQ Chicken Pizza" />
+          </div>
+          <div class="card-details">
+            <h3 class="item-name">BBQ Chicken Pizza</h3>
+            <div class="price-row">
+              <span class="item-price" data-raw-price="20.00">$20.00</span>
+              <button class="add-btn">Add to List</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="menu-card" data-category="pizza">
+          <div class="image-container">
+            <img src="margherita Pizza.png" alt="margherita Pizza" />
+          </div>
+          <div class="card-details">
+            <h3 class="item-name">Margherita Pizza</h3>
+            <div class="price-row">
+              <span class="item-price" data-raw-price="15.00">$15.00</span>
+              <button class="add-btn">Add to List</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="menu-card" data-category="pizza">
+          <div class="image-container">
+            <img src="Meat Lovers Pizza.png" alt="Meat Lovers Pizza" />
+          </div>
+          <div class="card-details">
+            <h3 class="item-name">Meat Lovers Pizza</h3>
+            <div class="price-row">
+              <span class="item-price" data-raw-price="16.00">$16.00</span>
+              <button class="add-btn">Add to List</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="menu-card" data-category="pizza">
+          <div class="image-container">
+            <img src="Pepperoni Pizza.png" alt="Pepperoni Pizza" />
+          </div>
+          <div class="card-details">
+            <h3 class="item-name">Pepperoni Pizza</h3>
+            <div class="price-row">
+              <span class="item-price" data-raw-price="12.00">$12.00</span>
+              <button class="add-btn">Add to List</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="menu-card" data-category="pizza">
+          <div class="image-container">
+            <img src="Veggie Pizza.png" alt="Veggie Pizza" />
+          </div>
+          <div class="card-details">
+            <h3 class="item-name">Veggie Pizza</h3>
+            <div class="price-row">
+              <span class="item-price" data-raw-price="10.00">$10.00</span>
+              <button class="add-btn">Add to List</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="menu-card" data-category="pasta">
+          <div class="image-container">
+            <img src="Chicken Alfredo.png" alt="Chicken Alfredo" />
+          </div>
+          <div class="card-details">
+            <h3 class="item-name">Chicken Alfredo</h3>
+            <div class="price-row">
+              <span class="item-price" data-raw-price="20.00">$20.00</span>
+              <button class="add-btn">Add to List</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="menu-card" data-category="pasta">
+          <div class="image-container">
+            <img src="Lasagna.png" alt="Lasagna" />
+          </div>
+          <div class="card-details">
+            <h3 class="item-name">Lasagna</h3>
+            <div class="price-row">
+              <span class="item-price" data-raw-price="18.00">$18.00</span>
+              <button class="add-btn">Add to List</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="menu-card" data-category="pasta">
+          <div class="image-container">
+            <img src="Mac and Cheese.png" alt="Mac and Cheese" />
+          </div>
+          <div class="card-details">
+            <h3 class="item-name">Mac and Cheese</h3>
+            <div class="price-row">
+              <span class="item-price" data-raw-price="12.00">$12.00</span>
+              <button class="add-btn">Add to List</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="menu-card" data-category="pasta">
+          <div class="image-container">
+            <img src="Penne Arrabbiata.png" alt="Penne Arrabbiata" />
+          </div>
+          <div class="card-details">
+            <h3 class="item-name">Penne Arrabbiata</h3>
+            <div class="price-row">
+              <span class="item-price" data-raw-price="25.00">$25.00</span>
+              <button class="add-btn">Add to List</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="menu-card" data-category="pasta">
+          <div class="image-container">
+            <img src="Spaghetti Bolognese.png" alt="Spaghetti Bolognese" />
+          </div>
+          <div class="card-details">
+            <h3 class="item-name">Spaghetti Bolognese</h3>
+            <div class="price-row">
+              <span class="item-price" data-raw-price="15.00">$15.00</span>
+              <button class="add-btn">Add to List</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button class="floating-list-btn" id="open-list-btn">
+      <span>My List</span>
+      <span class="floating-badge" id="floating-count">0</span>
+    </button>
+
+    <div class="modal-overlay" id="summary-modal">
+      <div class="modal-window">
+        <div class="modal-header">
+          <h2>My Selection Summary</h2>
+          <button class="close-modal-btn" id="close-modal">&times;</button>
+        </div>
+        <div class="modal-body" id="modal-items-content"></div>
+        <div class="modal-footer">
+          <span class="modal-total-label">Grand Total: </span>
+          <span class="modal-total-label" id="modal-grand-total"> $0.00</span>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // 1. CATEGORY FILTER LOGIC
+      const filterButtons = document.querySelectorAll(".category-btn");
+      const menuCards = document.querySelectorAll(".menu-card");
+
+      filterButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          filterButtons.forEach((btn) => btn.classList.remove("active"));
+          button.classList.add("active");
+
+          const filterValue = button.getAttribute("data-filter");
+
+          menuCards.forEach((card) => {
+            const cardCategory = card.getAttribute("data-category");
+            if (filterValue === "all" || cardCategory === filterValue) {
+              card.classList.remove("hidden");
+            } else {
+              card.classList.add("hidden");
+            }
+          });
+        });
+      });
+
+      // 2. STATE DATA FOR LIST
+      let userList = [];
+      const floatingCountBadge = document.getElementById("floating-count");
+      const addButtons = document.querySelectorAll(".add-btn");
+
+      addButtons.forEach((button) => {
+        button.addEventListener("click", (e) => {
+          const card = e.target.closest(".menu-card");
+          const itemName = card.querySelector(".item-name").innerText;
+          const itemPrice = parseFloat(
+            card.querySelector(".item-price").getAttribute("data-raw-price"),
+          );
+          const itemImageSrc = card.querySelector(".image-container img").src;
+
+          const existingItem = userList.find((item) => item.name === itemName);
+
+          if (existingItem) {
+            existingItem.quantity += 1;
+          } else {
+            userList.push({
+              name: itemName,
+              price: itemPrice,
+              image: itemImageSrc,
+              quantity: 1,
+            });
+          }
+
+          // Sync total counters onto floating action button UI label
+          updateFloatingBadge();
+        });
+      });
+
+      function updateFloatingBadge() {
+        let totalCount = 0;
+        userList.forEach((item) => (totalCount += item.quantity));
+        floatingCountBadge.innerText = totalCount;
+      }
+
+      // 3. MODAL RENDER AND ACTIONS
+      const modalOverlay = document.getElementById("summary-modal");
+      const openListBtn = document.getElementById("open-list-btn");
+      const closeModalBtn = document.getElementById("close-modal");
+      const modalItemsContent = document.getElementById("modal-items-content");
+      const modalGrandTotal = document.getElementById("modal-grand-total");
+
+      openListBtn.addEventListener("click", () => {
+        buildModalSummary();
+        modalOverlay.classList.add("active");
+      });
+
+      closeModalBtn.addEventListener("click", () => {
+        modalOverlay.classList.remove("active");
+      });
+
+      modalOverlay.addEventListener("click", (e) => {
+        if (e.target === modalOverlay) modalOverlay.classList.remove("active");
+      });
+
+      function buildModalSummary() {
+        modalItemsContent.innerHTML = "";
+        let grandTotal = 0;
+
+        if (userList.length === 0) {
+          modalItemsContent.innerHTML =
+            '<p class="empty-message">Your list is currently empty.</p>';
+          modalGrandTotal.innerText = "$0.00";
+          return;
+        }
+
+        userList.forEach((item, index) => {
+          const totalItemCost = item.price * item.quantity;
+          grandTotal += totalItemCost;
+
+          const summaryRow = document.createElement("div");
+          summaryRow.classList.add("summary-row-item");
+
+          summaryRow.innerHTML = `
+                <img class="summary-item-img" src="${item.image}" alt="${item.name}">
+                <div class="summary-item-details">
+                    <div class="summary-item-title">${item.name}</div>
+                    <div class="summary-item-subtext">Quantity: ${item.quantity} &times; $${item.price.toFixed(2)}</div>
+                    <button class="remove-btn" onclick="removeFromList(${index})">Remove</button>
+                </div>
+                <div class="summary-item-total-price">$${totalItemCost.toFixed(2)}</div>
+            `;
+
+          modalItemsContent.appendChild(summaryRow);
+        });
+
+        modalGrandTotal.innerText = `$${grandTotal.toFixed(2)}`;
+      }
+
+      window.removeFromList = function (index) {
+        if (userList[index].quantity > 1) {
+          userList[index].quantity -= 1;
+        } else {
+          userList.splice(index, 1);
+        }
+        updateFloatingBadge();
+        buildModalSummary(); // Re-render the visual display instantly
+      };
+    </script>
+  </body>
+</html>
